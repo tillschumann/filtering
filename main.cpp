@@ -13,20 +13,20 @@ class bloom_filter{
 public:
     inline void insert(const Key& k) {
         uint64_t hashValues = Hash()(k);
-        db[hashValues%db.size()] = true;
+        bs[hashValues%bs.size()] = true;
     }
 
     inline  bool may_contain(const Key& k ) const {
         uint64_t hashValues = Hash()(k);
 
-        if (!db[hashValues%db.size()])
+        if (!bs[hashValues%bs.size()])
             return false;
 
         return true;
     }
 
 private:
-    std::bitset<Size> db; 
+    std::bitset<Size> bs;
 };
 
 int main(){
