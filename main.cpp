@@ -26,7 +26,7 @@ public:
     }
 
 private:
-    std::bitset<Size> db; // the load balancing of neuron is dynamic so no array
+    std::bitset<Size> db; 
 };
 
 int main(){
