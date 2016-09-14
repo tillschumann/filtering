@@ -1,5 +1,6 @@
-cmake_minimum_required (VERSION 2.8.11)
-project (bloom_filter)
+cmake_minimum_required (VERSION  3.1)
+project(bloom_filter)
+set (CMAKE_CXX_STANDARD 11)
 find_package(boost)
 include_directories(${Boost_INCLUDE_DIRS})
 add_executable(bf main.cpp murmur_hash3.cpp)
