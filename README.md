@@ -1,2 +1,2 @@
 # filtering
-evaluate boom filter
+evaluate bloom filter
