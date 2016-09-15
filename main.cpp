@@ -8,7 +8,7 @@
 #include <vector>
 #include <cstdint>
 #include <boost/dynamic_bitset.hpp>
-
+#include "boost/bloom_filter/twohash_basic_bloom_filter.hpp"
 #include "timer_asm.h"
 
 template<class Key = uint64_t>
@@ -33,7 +33,9 @@ private:
 };
 
 std::string benchmark(uint64_t size){
-    bloom_filter<> bf(size);
+//    bloom_filter<> bf(size);
+
+    boost::bloom_filters::twohash_basic_bloom_filter<int, 1024> bf;
 
     std::vector<uint64_t> v(16384,0); // say 16384 neurons GID
     std::set<uint64_t> s; // the key=value and no duplication so no multi-set
@@ -56,11 +58,12 @@ std::string benchmark(uint64_t size){
     t1 = rdtsc();
     // cneuron checks everything coming from mpi_all_gather
     for(uint64_t i=0; i < v.size(); ++i){
-        if(bf.may_contain(i)){ // I may exist, but not garantee
-            counter1++;
+        if(bf.probably_contains(i)){ // I may exist, but not garantee
             auto search = s.find(i);
             if(search != s.end())
                 sum1 += *search;
+            else
+                counter1++;
         }
     }
     t2 = rdtsc();
