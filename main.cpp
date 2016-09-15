@@ -8,18 +8,15 @@
 
 #include "timer_asm.h"
 
-template<int Size = 1024, class Key = uint64_t, class Hash = std::hash<Key> >
+template<int Size = 10000, class Key = uint64_t>
 class bloom_filter{
 public:
     inline void insert(const Key& k) {
-        uint64_t hashValues = Hash()(k);
-        bs[hashValues%bs.size()] = true;
+        bs[k%bs.size()] = true;
     }
 
     inline  bool may_contain(const Key& k ) const {
-        uint64_t hashValues = Hash()(k);
-
-        if (!bs[hashValues%bs.size()])
+        if (!bs[k%bs.size()])
             return false;
 
         return true;
@@ -46,7 +43,7 @@ int main(){
     }
 
     //do something to avoid agressive optimization
-    uint64_t sum(0);
+    uint64_t sum(0),counter(0);
     //timing
     unsigned long long int t1(0),t2(0);
 
@@ -54,6 +51,7 @@ int main(){
     // cneuron checks everything coming from mpi_all_gather
     for(uint64_t i=0; i < v.size(); ++i){
         if(bf.may_contain(i)){ // I may exist, but not garantee
+            counter++;
             auto search = s.find(i);
             if(search != s.end())
                 sum += *search;
@@ -61,19 +59,21 @@ int main(){
     }
     t2 = rdtsc();
 
-    std::cout << sum << " using bloom_filter time: " << t2 -t1 << " [cycles] " << std::endl;
+    std::cout << sum << " using bloom_filter time: " << t2 -t1 << " [cycles], " << " collision " << counter/(double)v.size()*100 << std::endl;
 
-    //reset sum
+    //reset sum, counter
     sum = 0;
+    counter = 0;
     t1 = rdtsc();
     // cneuron checks everything coming from mpi_all_gather
     for(uint64_t i=0; i < v.size(); ++i){
+          counter++;
           auto search = s.find(i);
           if(search != s.end())
              sum += *search;
     }
     t2 = rdtsc();
 
-    std::cout << sum << " old way time: " << t2 -t1 << " [cycles] " << std::endl;
+    std::cout << sum << " old way time: " << t2 -t1 << " [cycles], "  << " collision " << counter/(double)v.size()*100 << std::endl;
 
 }
