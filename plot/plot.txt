@@ -7,19 +7,20 @@ set logscale x 2
 set format x "2^{%L}" #2^n
 
 set ylabel "SpeedUp"
+set yrange [0:4]
 set y2label "Collision rate"
 set xlabel "Size of the bitset"
 set datafile separator ","
 set ytics border nomirror
 set y2tics border nomirror
-set title "std::map filter VS bloom filtering 1024 elements into a set of 16384"
+set title "bloom filtering 1024 elements into various bitset size (x-axis)"
 
 set style line 1 lc rgb '#000000' pt 1 lw 1 lt 1
 set style line 2 lc rgb '#000000' pt 2 lw 1 lt 2
 set style line 3 lc rgb '#000000' pt 5 lw 1 lt 3
 
-set out "bloom.eps";plot   "benchamrk_bloom.csv" u 1:5 w l lw 2 t 'Speed Up'
-set out "bloom.eps";replot "benchamrk_bloom.csv" u 1:4 w l axes x1y2 lw 2 t 'Collision rate'
-
+set out "bloom.eps";plot   "benchamrk_bloom.csv" u 1:7 w l lw 2 t 'Speed Up bloom'
+set out "bloom.eps";replot "benchamrk_bloom.csv" u 1:6 w l lw 2 t 'Speed Up unorder\_set'
+set out "bloom.eps";replot "benchamrk_bloom.csv" u 1:5 w l axes x1y2 lw 2 t 'Collision rate bloom'
 
 set terminal pop
