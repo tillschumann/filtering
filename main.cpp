@@ -12,6 +12,8 @@
 #include "boost/bloom_filter/twohash_basic_bloom_filter.hpp"
 #include "timer_asm.h"
 
+#include "libnestutil/sparsetable.h"
+
 template<class Key = uint64_t>
 class bloom_filter{
 public:
@@ -32,6 +34,10 @@ private:
 };
 
 std::string benchmark(uint64_t size){
+    
+    //google::sparsetable< uint64_t > st_gids;
+    boost::dynamic_bitset<> st_gids(size, false);
+    
     bloom_filter<> bf(size);
 //  boost::bloom_filters::twohash_basic_bloom_filter<int, 1024> bf;
 
@@ -42,18 +48,22 @@ std::string benchmark(uint64_t size){
     //shuffle the initial buffer
     std::iota(v.begin(), v.end(), 0);
     std::random_shuffle(v.begin(),v.end());
+    
+    st_gids.resize(v.size());
 
     //take only 1024, both contains but with maybe collision for the filter (here no collision)
     for(int i=0; i < 1024; ++i){
         bf.insert(v[i]);
         s.insert(v[i]);
         us.insert(v[i]);
+        //st_gids.set(v[i], 4);
+        st_gids[v[i]] = true;
     }
 
     //do something to avoid agressive optimization
-    uint64_t sum1(0),sum2(0),sum3(0),counter1(0),counter2(0);
+    uint64_t sum1(0),sum2(0),sum3(0),sum4(0),counter1(0),counter2(0);
     //timing
-    unsigned long long int t1(0),t2(0),time1(0),time2(0),time3(0);
+    unsigned long long int t1(0),t2(0),time1(0),time2(0),time3(0),time4(0);
 
     t1 = rdtsc();
     // cneuron checks everything coming from mpi_all_gather
@@ -93,12 +103,31 @@ std::string benchmark(uint64_t size){
     }
     t2 = rdtsc();
     time3 = (t2-t1)*0.1;
+    
+    t1 = rdtsc();
+    // cneuron checks everything coming from mpi_all_gather with the set
+    for(int j=0; j<10; ++j)
+        for(uint64_t i=0; i < v.size(); ++i){
+            counter2++;
+            if (st_gids[i])
+                sum4++;
+        }
+    t2 = rdtsc();
+    time4 = (t2-t1)*0.1;
+    
+    if ( v.size() != size )
+        time4=time2;
+    
+    
+    
 
     std::string result =  std::to_string(size) + ","
+                        + std::to_string(time4) + ","
                         + std::to_string(time3) + ","
                         + std::to_string(time2) + ","
                         + std::to_string(time1) + ","
                         + std::to_string(counter1/(double)v.size()*100) + ","
+                        + std::to_string(time2/(double)time4) + ","
                         + std::to_string(time2/(double)time3) + ","
                         + std::to_string(time2/(double)time1) + "\n";
     return result;
@@ -107,8 +136,8 @@ std::string benchmark(uint64_t size){
 
 int main(){
     int size=1;
-    std::string filename = std::string("benchamrk_bloom") + ".csv";
-    std::list<std::string> res(1,"#size,std::unorder_set,std::set,bommer,collision rate,SU unorder_set,SU set\n");
+    std::string filename = std::string("benchmark_bloom") + ".csv";
+    std::list<std::string> res(1,"#size,google_sparse,std::unorder_set,std::set,bommer,collision rate,SU google,SU unorder_set,SU set\n");
     for(int i=0; i<25;++i){
         res.push_back(benchmark(size));
         size <<=1;
